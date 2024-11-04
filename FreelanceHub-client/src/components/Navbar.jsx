@@ -1,11 +1,18 @@
 import React, { useContext } from 'react';
 import logo from '../assets/images/logo.png'
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../AuthContext/AuthProvider';
 
 
 const Navbar = () => {
   const {user, logOut} = useContext(AuthContext)
+  const navigate = useNavigate()
+  
+
+  const handleLogOut = () => {
+    logOut()
+    navigate('/')
+  }
     return (
         <div className='navbar bg-base-100 shadow-sm container px-4 mx-auto'>
       <div className='flex-1'>
@@ -18,6 +25,9 @@ const Navbar = () => {
         <ul className='menu menu-horizontal px-1'>
           <li>
             <Link to='/'>Home</Link>
+          </li>
+          <li>
+            <Link to='/all-jobs'>All Jobs</Link>
           </li>
 
           {!user && <li>
@@ -54,10 +64,10 @@ const Navbar = () => {
               <Link to='/my-bids'>My Bids</Link>
             </li>
             <li>
-              <Link to='/bid-request'>Bid Requests</Link>
+              <Link to='/bid-requests'>Bid Requests</Link>
             </li>
             <li className='mt-2'>
-              <button onClick={logOut} className='bg-gray-200 block text-center'>Logout</button>
+              <button onClick={handleLogOut} className='bg-gray-200 block text-center'>Logout</button>
             </li>
           </ul>
         </div>

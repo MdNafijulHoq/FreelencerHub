@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/images/logo.png'
 import bgRegistration from '../assets/images/register.jpg'
@@ -7,12 +7,19 @@ import toast from 'react-hot-toast';
 
 const Registration = () => {
 
-    const { user,
+    const { user, logOut, loading,
         setUser,
         createUser,
         signInWithGoogle,
         updateUserProfile } = useContext(AuthContext)
     const navigate = useNavigate()
+
+    useEffect(() => {
+      if(user){
+        navigate('/')
+      }
+    },[navigate, user])
+
 
     const handleSignUp = async e => {
         e.preventDefault();
@@ -22,13 +29,32 @@ const Registration = () => {
         const photo = form.photo.value;
         const password = form.password.value;
         console.log({email, password, name, photo})
+
+        if(password.length < 6){
+            toast.error('Password should have at least 6 Characters!')
+            return;
+          }
+
+          if(!/[A-Z]/.test(password)){
+                toast.error('Password should have at least One Upper Case!')
+                return;
+          }
+
+          if(!/[a-z]/.test(password)){
+                toast.error('Password should have at least One Lower Case!')
+                return;
+          }
+
+
         try{
             const result = await createUser(email, password)
             console.log(result)
             await updateUserProfile(name, photo)
             setUser({...user, photoURL: photo, displayName: name})
+            toast.success('SignIn Successful')
+            // logOut()
             navigate('/')
-            toast.success('Signin Successful')
+            
         }
         catch (err){
             console.log(err)
@@ -41,8 +67,8 @@ const Registration = () => {
         try{
             await signInWithGoogle()
             toast.success('Signin Successful')
-            navigate('/')
-            
+            // logOut()
+            navigate('/')         
         }
         catch (err){
             console.log(err)
@@ -50,6 +76,8 @@ const Registration = () => {
         }
     }
 
+    if(user || loading ) return 
+    
     return (
         <div className='flex justify-center items-center min-h-[calc(100vh-306px)] my-12'>
       <div className='flex w-full max-w-sm mx-auto overflow-hidden bg-white rounded-lg shadow-lg  lg:max-w-4xl '>

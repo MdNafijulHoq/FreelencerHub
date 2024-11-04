@@ -16,6 +16,12 @@ import AddJob from './pages/AddJob';
 import ErrorPage from './pages/ErrorPage';
 import MyPostedJobs from './pages/MyPostedJobs';
 import UpdateJob from './pages/UpdateJob';
+import PrivateRoute from './PrivateRoute/PrivateRoute';
+import MyBids from './pages/MyBids';
+import BidRequest from './pages/BidRequest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import AllJobs from './pages/AllJobs';
 
 const router = createBrowserRouter([
   {
@@ -28,6 +34,10 @@ const router = createBrowserRouter([
         element: <Home></Home>,
       },
       {
+        path: '/all-jobs',
+        element: <AllJobs></AllJobs>,
+      },
+      {
         path: '/login',
         element: <Login></Login>,
       },
@@ -37,34 +47,46 @@ const router = createBrowserRouter([
       },
       {
         path: '/job/:id',
-        element: <JobDetails></JobDetails>,
+        element: <PrivateRoute><JobDetails></JobDetails></PrivateRoute>,
         loader: ({params}) => fetch(`${import.meta.env.VITE_API_URL}/job/${params.id}`),
       },
       {
         path: '/update/:id',
-        element: <UpdateJob></UpdateJob>,
+        element: <PrivateRoute><UpdateJob></UpdateJob></PrivateRoute>,
         loader: ({params}) => fetch(`${import.meta.env.VITE_API_URL}/job/${params.id}`),
       },
       {
         path: '/add-job',
-        element: <AddJob></AddJob>,
+        element: <PrivateRoute><AddJob></AddJob></PrivateRoute>,
       },
       {
         path: '/my-posted-jobs',
-        element: <MyPostedJobs></MyPostedJobs>,
+        element: <PrivateRoute><MyPostedJobs></MyPostedJobs></PrivateRoute>,
+      },
+      {
+        path: '/my-bids',
+        element: <PrivateRoute><MyBids></MyBids></PrivateRoute>,
+      },
+      {
+        path: '/bid-requests',
+        element: <PrivateRoute><BidRequest></BidRequest></PrivateRoute>,
       },
       
     ],
   },
 ]);
 
+const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
-        <div className='max-w-7xl font-lato mx-auto'>
-            <RouterProvider router={router} />
-         </div>
+        <QueryClientProvider client={queryClient}>
+            <div className='max-w-7xl font-lato mx-auto'>
+                <RouterProvider router={router} />
+            </div>
+            <ReactQueryDevtools initialIsOpen={false} />
+         </QueryClientProvider>
          <Toaster></Toaster>
     </AuthProvider>
   </StrictMode>,

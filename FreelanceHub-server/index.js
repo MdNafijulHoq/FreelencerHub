@@ -9,6 +9,7 @@ const app = express()
 const corsOptions = {
     origin: [
         'http://localhost:5173',
+        'https://freelancehub-7580d.web.app',
     ],
     Credentials: true,
     optionSuccessStatus: 200,
@@ -55,6 +56,22 @@ async function run() {
         res.send(result)
     })
 
+    // Get all bids by a specific user
+    app.get('/my-bids/:email', async(req, res) => {
+        const email = req.params.email
+        const query = {email: email};
+        const result = await bidsCollection.find(query).toArray()
+        res.send(result)
+    })
+
+    // Get all bid requests from db for Job owner
+    app.get('/bid-requests/:email', async(req, res) => {
+        const email = req.params.email
+        const query = {'buyer.email': email};
+        const result = await bidsCollection.find(query).toArray()
+        res.send(result)
+    })
+
     // Save a bid data in db
     app.post('/job', async(req, res) => {
         const jobData = req.body
@@ -65,7 +82,37 @@ async function run() {
     // Save a bid data in db
     app.post('/bid', async(req, res) => {
         const bidData = req.body
+
+        // check if it is a duplicate request
+        const alreadyApplied = await bidsCollection.findOne(
+           { email: bidData.email,
+            jobId: bidData.jobId,}
+        )
+        if(alreadyApplied){
+            return res.status(400).send('You have placed a bid on this job')
+        }
+
         const result = await bidsCollection.insertOne(bidData)
+
+        // update bid count in jobs collection
+        const updateDoc = {      
+            $inc: { bid_count: 1},
+        }
+        const jobQuery = {_id: new ObjectId(bidData.jobId)}
+        const updateBidCount = await jobsCollection.updateOne(jobQuery, updateDoc)
+        console.log(updateBidCount)
+        res.send(result)
+    })
+
+    // Update Bid status from Bid Request page
+    app.patch('/bid/:id', async(req, res) => {
+        const id = req.params.id
+        const status = req.body
+        const query = {_id: new ObjectId(id)}
+        const updateDoc = {
+            $set: status,
+        }
+        const result = await bidsCollection.updateOne(query, updateDoc)
         res.send(result)
     })
 
@@ -89,6 +136,46 @@ async function run() {
             }
         }
         const result = await jobsCollection.updateOne(query, updateDoc, options)
+        res.send(result)
+    })
+
+    
+    // Get all jobs data from db for count
+    app.get('/jobs-count', async(req, res) => {
+        const filter = req.query.filter
+        const search = req.query.search
+        let query = {
+            job_title: {$regex: search, $options: 'i'}
+        }
+        if(filter){
+            // query = {category: filter}
+            query.category = filter
+        }
+        const count = await jobsCollection.countDocuments(query)
+        res.send({count})
+    })
+
+    
+    // Get all jobs data from db for pagination
+    app.get('/all-jobs', async(req, res) => {
+        const size = parseInt(req.query.size)
+        const page = parseInt(req.query.page) - 1
+        const filter = req.query.filter
+        const sort = req.query.sort
+        const search = req.query.search
+        let query = {
+            job_title: {$regex: search, $options: 'i'}
+        }
+        if(filter){
+            // query = {category: filter}
+            query.category = filter
+        }
+        let options = {}
+        if(sort){
+            options = {sort: {deadline: sort === 'asc' ? 1 : -1}}
+        }
+        console.log(size, page)
+        const result = await jobsCollection.find(query, options).skip(page * size).limit(size).toArray()
         res.send(result)
     })
 
